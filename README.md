@@ -6,7 +6,7 @@ Toolbox containing research notes & PoC code for weaponizing .NET's DLR
 
 | Script | Description|
 | --- | --- |
-| `Invoke-JumpScare.ps1` | Executes shellcode using an embedded Boolang compiler, nothing touches disk (at least from what I've seen) and no calls to csc.exe are made :) |
+| `Invoke-JumpScare.ps1` | Executes shellcode using an embedded Boolang compiler, nothing touches disk (at least from what I've seen) and no calls to `csc.exe` are made :) |
 | `Invoke-IronPython.ps1`  | Executes IronPython code using the embedded IPY engine. Same concept as `Invoke-JumpScare` only using IronPython. |
 | `runBoo.cs` | C# version of `Invoke-JumpScare`. Executes shellcode using an embedded Boolang compiler.|
 | `minidump.boo` | Native Boolang script to dump memory using `MiniDumpWriteDump` |
@@ -25,7 +25,7 @@ From an offensive perspective this has an insane amount of flexibility and a num
 3. All your 'evil' can be coded in the language of your embedded engine/compiler. If you do this using PowerShell, ScriptBlock Logging sees nothing since all the magic happens in the DLR.
 
 4. Usually, all of the DLR languages have a way of calling native methods either through the language itself or by dynamically compiling C# (e.g PowerShell's Add-Type).
-   If you go with the former method, no calls to `csc.exe` are made and usually nothing is dropped to disk as the languages generate everything needed in memory through IL code.
+   If you go with the former method no calls to `csc.exe` are made and usually nothing is dropped to disk as the languages generate everything needed in memory through IL code.
    We can go as "...low and high as we want.." (@Op_nomad) & this allows us to do all the good stuff we all love (inject shellcode, unmanaged DLLs, load PEs etc..)
 
 5. Allows for quick re-tooling and weaponization of payloads. No manual compilation is necessary.
@@ -43,13 +43,23 @@ If you're interested in this, here's some other tools that also try to weponize 
  - @pwndizzle
  - @malcomvetter
  - @harmj0y
+ - @elitest
 
 ##  References
 
-Fair warning, if you start reading this stuff it's gonna send you down a hellish rabbit hole (with actual deamon rabbits)
+Fair warning, if you start reading this stuff it's gonna send you down a hellish rabbit hole (with actual deamon rabbits).
 
 - https://github.com/boo-lang/boo/wiki/Scripting-with-the-Boo.Lang.Compiler-API
 - https://github.com/boo-lang/boo/wiki/Invoke-Native-Methods-with-DllImport
 - https://github.com/pwndizzle/c-sharp-memory-injection
+- http://www.voidspace.org.uk/ironpython/embedding.shtml
 - http://www.voidspace.org.uk/ironpython/winforms/part10.shtm
 - https://www.codeproject.com/Articles/53611/%2FArticles%2F53611%2FEmbedding-IronPython-in-a-C-Application
+- http://www.voidspace.org.uk/ironpython/ip_in_ip.shtml
+- https://jimshaver.net/2018/02/22/net-over-net-breaking-the-boundaries-of-the-net-framework/
+
+# Talks
+
+- [Quick Retooling in .Net for Red Teams - Circle City Con 2018](https://www.youtube.com/watch?v=XjNm99mQmKo)
+- [IronPython...OMFG - Derbycon 2018](https://www.youtube.com/watch?v=NaFiAx737qgv)
+- [Building an Empire with (Iron)Python - Derbycon 2018](https://www.youtube.com/watch?v=C04TD4dVLSk)
