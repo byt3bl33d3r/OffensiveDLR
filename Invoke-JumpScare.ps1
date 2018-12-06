@@ -10,7 +10,7 @@ License: BSD 3-Clause
 
 .DESCRIPTION
 This is a PoC script that executes shellcode using an embedded Boolang compiler:
- - The required Boolang Assemblied are loaded on runtime
+ - The required Boolang Assemblies are loaded on runtime
  - Boolang script is dynamically compiled and executed on the fly
 
 From an offensive perspective this has an insane amount of flexibility and has a lot of advantages, to name a couple:
@@ -18,7 +18,7 @@ From an offensive perspective this has an insane amount of flexibility and has a
 
  - When compiling Boolang source code if you specify the "CompileToMemory" pipline, no calls to csc.exe are made and nothing seems to touch disk (?)
    This allows you to call native methods (!!) from Boolang thorugh PowerShell without the pitfalls of using Add-Type or IronPython's C# Compilation function
-   looking at the source, it seems it's doing this by generating the resulting Assmebly of the Boolang script directly through IL code.
+   looking at the source, it seems it's doing this by generating the resulting Assembly of the Boolang script directly through IL code.
 
 .PARAMETER Arch
 Default = x64: Shellcode Architeture to inject.
@@ -36,9 +36,9 @@ Invoke-JumpScare
 Invoke-JumpScare -Arch x64 -Method InjectRemote -Path .\shellcode.boo
 
 .LINK
-https://github.com/byt3bl33d3r
+https://github.com/byt3bl33d3r/OffensiveDLR
 https://github.com/boo-lang/boo/
-https://github.com/boo-lang/boo/wiki/
+https://github.com/boo-lang/boo/wiki/Scripting-with-the-Boo.Lang.Compiler-API
 #>
 
     param (

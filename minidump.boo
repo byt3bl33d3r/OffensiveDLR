@@ -6,7 +6,7 @@ from System.IO import FileStream, FileMode, FileAccess,FileShare
 Author: Marcello Salvati (@byt3bl33d3r)
 License: BSD 3-Clause
 
-This Boolang source file can be run directly with the booi.exe interpreter or using the embedded compiler in runBoo.cs
+This Boolang source file can be run directly with the booi.exe interpreter or using the embedded compiler in runBoo.cs/Invoke-JumpScare.ps1
 
 */
 
