@@ -74,7 +74,7 @@ namespace ConsoleApplication1
             0x00,0x53,0xff,0xd5,0x63,0x61,0x6c,0x63,0x2e,0x65,0x78,0x65,0x00 };
 
             BooCompiler compiler = new BooCompiler();
-            //compiler.Parameters.Input.Add(new StringInput("print 'Doot Doot'!")); :)
+            //compiler.Parameters.Input.Add(new StringInput("MyScript", "print 'Doot Doot'!")); :)
             compiler.Parameters.Input.Add(new FileInput(args[0]));
             compiler.Parameters.Pipeline = new CompileToMemory();
             compiler.Parameters.Ducky = true;
