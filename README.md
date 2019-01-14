@@ -6,6 +6,7 @@ Toolbox containing research notes & PoC code for weaponizing .NET's DLR
 
 | Script | Description|
 | --- | --- |
+| `Kukulkan` | A slimmed down version of [SILENTTRINITY](https://github.com/byt3bl33d3r/SILENTTRINITY), C# DLL & EXE that embed an IPY engine. Comms are encrypted and can be used with CobaltStrike |
 | `Invoke-JumpScare.ps1` | Executes shellcode using an embedded Boolang compiler, nothing touches disk (at least from what I've seen) and no calls to `csc.exe` are made :) |
 | `Invoke-IronPython.ps1`  | Executes IronPython code using the embedded IPY engine. Same concept as `Invoke-JumpScare` only using IronPython. |
 | `SharpSnek.cs` | C# code that embedes an IronPython engine and executes embedded IPY code.  Hooks `AppDomain.CurrentDomain.AssemblyResolve` to resolve needed Assemblies at runtime. | 
