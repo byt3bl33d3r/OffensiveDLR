@@ -12,7 +12,7 @@ Kukulkan provides a C# DLL & EXE that embeds an IronPython engine allowing you t
 
 The Payload Server is used for C2: it hosts the needed assemblies, 'jobs' &  handles output.
 
-C2 Comms are performed over HTTPS (server also supports HTTP2), everything is encrypted using AES-256, including the initial stage :).
+C2 Comms are performed over HTTPS (server also supports HTTP2), everything is encrypted using ECDHE with AES-256 & HMAC-SHA256, including the initial stage :).
 
 The reasoning behind making this is to provide researches/red-teamers/pentesters a way of experimenting with the idea without having all the overhead of installing [SILENTTRINITY](https://github.com/byt3bl33d3r/SILENTTRINITY) which is not yet stable.
 
@@ -20,11 +20,9 @@ Additionally this is (i think?) 100% opsec safe, since the project provides .NET
 
 ## Usage:
 
-```Usage: Kukulkan.exe <key> <IV> <URL>```
+```Usage: Kukulkan.exe <URL>```
 
-
-The ```Key``` & ```IV``` arguments are provided to you when you start the Payload Server
-
+`<URL>` is the URL to the payload server (e.g. `https://172.16.164.1/`)
 
 ## Disclaimer 
 
