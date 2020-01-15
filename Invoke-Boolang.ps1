@@ -24,24 +24,12 @@ vH0HfJRF+v/MvJvdzW4CbMpuIEBCCSyhBQiwJIGEZkGwYCEBC1UBlcUEEAiL9BAICIiKqKiIDVE5KyBn
         $DeflatedStream.Read($UncompressedFileBytes, 0, 1900000) | Out-Null
         return [Reflection.Assembly]::Load($UncompressedFileBytes)
     }
-
-    $BooSource = @'
-import System
-
-public static def Main():
-    print "Hello from BooLang!"
-'@
     
     $BooLangAsm = Load-Assembly($BooLangDLL)
     $BooLangExtensionsAsm = Load-Assembly($BoolangExtensionsDLL)
     $BooLangCompilerAsm = Load-Assembly($BooLangCompilerDLL)
     $BooLangParserAsm = Load-Assembly($BooLangParserDLL)
     
-
-    $scriptinput = [Boo.Lang.Compiler.IO.StringInput]::new("MyScript.boo", $BooSource)
-
-    Write-Output "Compiling..."
-
  <#
     There seems to be a bunch of bugs in Boo's internal assembly resolution logic.
 
@@ -66,6 +54,14 @@ public static def Main():
  
  #>
 
+     $BooSource = @'
+import System
+
+public static def Main():
+    print "Hello from BooLang!"
+'@
+
+    $scriptinput = [Boo.Lang.Compiler.IO.StringInput]::new("MyScript.boo", $BooSource)
 
     #Passing $false to the constructor tells Boo to not automatically reference default assemblies
     $parameters = [Boo.Lang.Compiler.CompilerParameters]::new($false) 
@@ -87,6 +83,8 @@ public static def Main():
     #Write-Output $parameters.References
 
     $compiler = [Boo.Lang.Compiler.BooCompiler]::new($parameters)
+
+    Write-Output "Compiling..."
     $context = $compiler.Run()
 
     if ($context.GeneratedAssembly -ne $null)
