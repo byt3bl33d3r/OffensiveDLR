@@ -16,7 +16,8 @@ Toolbox containing research notes & PoC code for weaponizing .NET's DLR
 | `minidump.boo` | Native Boolang script to dump memory using `MiniDumpWriteDump` |
 | `shellcode.boo`| Native Boolang script that executes shellcode. Currently contains 3 diffrent techniques (QueueUserAPC, CreateThread/WaitForSingleObject, WriteProcessMemory/CreateRemoteThread) |
 | `Invoke-SSharp.ps1` | Executes [SSharp](https://github.com/PetroProtsyk/SSharp) from an embedded compiler within PowerShell. Compilation does not call csc.exe
-| `Invoke-Boolang.ps1` | Executes Boo code from an embedded compile. It also provides workarounds for some bugs I discovered when the Boolang compiler get's embedded within PowerShell.
+| `Invoke-Boolang.ps1` | Executes Boo code from an embedded compiler. It also provides workarounds for some bugs I discovered when the Boolang compiler get's embedded within PowerShell.
+| `Invoke-NeoLua.ps1` | Executes Lua code from an embedded compiler within PowerShell.
 
 ## Why?
 The .NET DLR is just straight up bonkers, it allows you to do crazy things like embed freaking compilers/engines within other .NET languages (e.g PowerShell & C#) while still remaining Opsec safe & staying in memory.
