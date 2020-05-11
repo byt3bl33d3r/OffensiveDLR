@@ -29,7 +29,7 @@ class Inject:
         pass
 
     [DllImport("kernel32.dll")]
-    def WriteProcessMemory(hProcess as int, lpBaseAddress as int, lpBuffer as (byte), nSize as int, lpNumberOfBytesWritten as int) as bool:
+    def WriteProcessMemory(hProcess as int, lpBaseAddress as int, lpBuffer as (byte), nSize as int, ref lpNumberOfBytesWritten as int) as bool:
         pass
 
     [DllImport("kernel32.dll")]
