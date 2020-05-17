@@ -25,7 +25,7 @@ class Inject:
         pass
 
     [DllImport("kernel32.dll")]
-    def VirtualProtectEx(hProcess as int, lpAddress as int, dwSize as int, flNewProtect as uint, lpflOldProtect as uint) as bool:
+    def VirtualProtectEx(hProcess as int, lpAddress as int, dwSize as int, flNewProtect as uint, ref lpflOldProtect as uint) as bool:
         pass
 
     [DllImport("kernel32.dll")]
